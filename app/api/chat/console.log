@@ -1,0 +1,4 @@
+console.log("ENV CHECK:", {
+  url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  service: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+});

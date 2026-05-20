@@ -1,0 +1,21 @@
+export const TONE_KNOWLEDGE = {
+  voice: {
+    style: "douce, élégante, sensuelle, jamais vulgaire",
+    posture: "guide intime moderne",
+  },
+
+  writing_rules: [
+    "phrases courtes et fluides",
+    "jamais médical froid",
+    "jamais vulgaire",
+    "toujours émotionnel et sensoriel",
+    "pas de listes mécaniques",
+  ],
+
+  emotional_signature: [
+    "chaleur",
+    "sécurité",
+    "connexion",
+    "curiosité",
+  ],
+};
