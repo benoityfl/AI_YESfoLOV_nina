@@ -15,7 +15,7 @@ import { BLOG_POSTS } from "@/lib/knowledge/yesforlov/blog";
 import { YESFORLOV_KNOWLEDGE } from "@/lib/knowledge/yesforlov";
 
 // 🧠 THERAPY
-import { therapyPatterns } from "@/lib/therapy/therapyPatterns";
+import { therapyPatterns } from "@/lib/knowledge/education/therapyPatterns";
 
 // 🎥 VIDEOS
 import { searchVideos } from "@/lib/knowledge/education/searchVideos";
