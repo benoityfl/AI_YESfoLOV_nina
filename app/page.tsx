@@ -376,7 +376,7 @@ export default function Page() {
             />
           </div>
 
-          <p className="eyebrow">Nina · Intelligence Intime</p>
+          <p className="eyebrow">Nina · 1er Intelligence Intime</p>
 
           <h1 className="headline">
             L'art d'aimer,<br />

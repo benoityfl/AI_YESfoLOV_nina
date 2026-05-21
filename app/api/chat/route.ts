@@ -14,6 +14,12 @@ import { BLOG_POSTS } from "@/lib/knowledge/yesforlov/blog";
 
 import { YESFORLOV_KNOWLEDGE } from "@/lib/knowledge/yesforlov";
 
+// 🧠 THERAPY
+import { therapyPatterns } from "@/lib/therapy/therapyPatterns";
+
+// 🎥 VIDEOS
+import { searchVideos } from "@/lib/knowledge/education/searchVideos";
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
@@ -59,6 +65,19 @@ function searchBlog(message: string) {
       .split(" ")
       .some((word) => searchableText.includes(word));
   });
+}
+
+// ─────────────────────────────
+// THERAPY MATCHER
+// ─────────────────────────────
+function matchTherapy(message: string) {
+  const lower = message.toLowerCase();
+
+  return therapyPatterns.filter((p) =>
+    p.triggers?.some((t: string) =>
+      lower.includes(t.toLowerCase())
+    )
+  );
 }
 
 // ─────────────────────────────
@@ -110,21 +129,66 @@ export async function POST(req: Request) {
       intensity: supabaseProfile.intensity ?? 0,
       relationship_mode: supabaseProfile.relationship_mode ?? "solo",
       relationship_state: supabaseProfile.relationship_state ?? null,
-      communication_style: supabaseProfile.communication_style ?? null,
-      intimacy_level: supabaseProfile.intimacy_level ?? null,
-      emotional_needs: supabaseProfile.emotional_needs ?? [],
+      communication_style:
+        supabaseProfile.communication_style ?? null,
+      intimacy_level:
+        supabaseProfile.intimacy_level ?? null,
+      emotional_needs:
+        supabaseProfile.emotional_needs ?? [],
       tensions: supabaseProfile.tensions ?? [],
       narrative: supabaseProfile.narrative ?? null,
     };
 
-    const extracted = extractProfile(lastMessage, baseProfile);
-    const mergedProfile = updateProfile(baseProfile, extracted);
+    const extracted = extractProfile(
+      lastMessage,
+      baseProfile
+    );
+
+    const mergedProfile = updateProfile(
+      baseProfile,
+      extracted
+    );
+
     const memoryContext = buildContext(mergedProfile);
+
+    // ─────────────────────────────
+    // THERAPY ENGINE
+    // ─────────────────────────────
+    const therapy = matchTherapy(lastMessage).slice(0, 2);
+
+    const therapyContext = therapy.length
+      ? `
+THERAPEUTIC CONTEXT:
+
+${therapy
+  .map(
+    (t) => `
+Situation: ${t.situation}
+
+Observation:
+${t.observation}
+
+Interpretation:
+${t.interpretationLogic}
+
+Guidance:
+${t.guidance}
+
+Questions:
+${t.explorationQuestions
+  ?.map((q: string) => `- ${q}`)
+  .join("\n")}
+`
+  )
+  .join("\n")}
+`
+      : "";
 
     // ─────────────────────────────
     // PRODUCTS
     // ─────────────────────────────
-    const relevantProducts = searchProducts(lastMessage).slice(0, 3);
+    const relevantProducts =
+      searchProducts(lastMessage).slice(0, 3);
 
     const productContext = relevantProducts.length
       ? `
@@ -146,7 +210,8 @@ Description: ${p.description}
     // ─────────────────────────────
     // BLOG
     // ─────────────────────────────
-    const relevantBlogPosts = searchBlog(lastMessage).slice(0, 3);
+    const relevantBlogPosts =
+      searchBlog(lastMessage).slice(0, 3);
 
     const blogContext = relevantBlogPosts.length
       ? `
@@ -159,6 +224,32 @@ Title: ${b.title}
 Excerpt: ${b.excerpt}
 Tags: ${b.tags?.join(", ")}
 URL: ${b.url}
+`
+  )
+  .join("\n")}
+`
+      : "";
+
+    // ─────────────────────────────
+    // VIDEO ENGINE
+    // ─────────────────────────────
+    const relevantVideos =
+      searchVideos(lastMessage).slice(0, 2);
+
+    const videoContext = relevantVideos.length
+      ? `
+EDUCATIONAL VIDEO CONTENT:
+
+${relevantVideos
+  .map(
+    (video) => `
+Title: ${video.title}
+
+Description:
+${video.description}
+
+URL:
+${video.url}
 `
   )
   .join("\n")}
@@ -197,6 +288,9 @@ RULES:
 - Never vulgar
 - Never invent products
 - Always elegant, warm, emotionally intelligent
+- Suggest educational content only if relevant
+- Never overwhelm the user with too much information
+- Videos should feel like gentle guidance
 `.trim();
 
     // ─────────────────────────────
@@ -207,9 +301,13 @@ ${SYSTEM_PROMPT}
 
 ${memoryContext}
 
+${therapyContext}
+
 ${productContext}
 
 ${blogContext}
+
+${videoContext}
 
 Emotion: ${emotion}
 Tone: ${emotionContext.tone}
@@ -219,15 +317,22 @@ Intention: ${emotionContext.intention}
     // ─────────────────────────────
     // OPENAI
     // ─────────────────────────────
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.8,
-      messages: [
-        { role: "system", content: brandSystem },
-        { role: "system", content: finalPrompt },
-        ...userMessages,
-      ],
-    });
+    const response =
+      await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.8,
+        messages: [
+          {
+            role: "system",
+            content: brandSystem,
+          },
+          {
+            role: "system",
+            content: finalPrompt,
+          },
+          ...userMessages,
+        ],
+      });
 
     const assistantMessage =
       response.choices[0]?.message?.content ?? "";
@@ -241,7 +346,8 @@ Intention: ${emotionContext.intention}
         .update({
           emotional_state: emotion,
           intensity: intensityMap[emotion] ?? 20,
-          last_interaction_at: new Date().toISOString(),
+          last_interaction_at:
+            new Date().toISOString(),
         })
         .eq("user_id", userId);
     }
@@ -255,13 +361,19 @@ Intention: ${emotionContext.intention}
       profile: mergedProfile,
       products: relevantProducts,
       blog: relevantBlogPosts,
+      therapy,
+      videos: relevantVideos,
     });
   } catch (err) {
     console.error("❌ CHAT ERROR:", err);
 
     return Response.json(
-      { error: "server_error" },
-      { status: 500 }
+      {
+        error: "server_error",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
