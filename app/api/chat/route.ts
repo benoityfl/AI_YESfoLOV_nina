@@ -11,11 +11,10 @@ import { buildContext } from "@/lib/memory/buildContext";
 
 import { searchProducts } from "@/lib/knowledge/yesforlov/products";
 import { BLOG_POSTS } from "@/lib/knowledge/yesforlov/blog";
-
 import { YESFORLOV_KNOWLEDGE } from "@/lib/knowledge/yesforlov";
 
 // 🧠 THERAPY
-import { therapyPattern } from "@/lib/knowledge/education/therapyPattern";
+import { therapyPattern } from "@/lib/knowledge/education/TherapyPattern";
 
 // 🎥 VIDEOS
 import { searchVideos } from "@/lib/knowledge/education/searchVideos";
@@ -47,7 +46,7 @@ const intensityMap: Record<string, number> = {
 };
 
 // ─────────────────────────────
-// BLOG SEARCH ENGINE
+// BLOG SEARCH
 // ─────────────────────────────
 function searchBlog(message: string) {
   const query = message.toLowerCase();
@@ -68,16 +67,32 @@ function searchBlog(message: string) {
 }
 
 // ─────────────────────────────
-// THERAPY MATCHER
+// THERAPY MATCHER (FIX FINAL)
 // ─────────────────────────────
 function matchTherapy(message: string) {
   const lower = message.toLowerCase();
 
-  return therapyPatterns.filter((p) =>
-    p.triggers?.some((t: string) =>
-      lower.includes(t.toLowerCase())
-    )
-  );
+  return therapyPatterns.filter((p) => {
+    const text = `
+      ${p.situation}
+      ${p.observation}
+      ${p.interpretationLogic}
+      ${p.guidance}
+      ${(p.explorationQuestions ?? []).join(" ")}
+      ${(p.affirmations ?? []).join(" ")}
+      ${(p.exercices ?? []).join(" ")}
+      ${(p.signaux_dalerte ?? []).join(" ")}
+    `.toLowerCase();
+
+    let score = 0;
+
+    for (const word of lower.split(" ")) {
+      if (word.length < 3) continue;
+      if (text.includes(word)) score++;
+    }
+
+    return score >= 2;
+  });
 }
 
 // ─────────────────────────────
@@ -92,16 +107,11 @@ export async function POST(req: Request) {
 
     const lastMessage = userMessages.at(-1)?.content ?? "";
 
-    console.log("🔥 CHAT API HIT");
-
-    // ─────────────────────────────
-    // EMOTION ENGINE
-    // ─────────────────────────────
     const emotion = detectEmotion(lastMessage);
     const emotionContext = emotionMap[emotion];
 
     // ─────────────────────────────
-    // PROFILE LOAD
+    // SUPABASE PROFILE
     // ─────────────────────────────
     let supabaseProfile: any = {};
 
@@ -115,44 +125,31 @@ export async function POST(req: Request) {
       supabaseProfile = data ?? {};
 
       if (!data) {
-        await supabase
-          .from("emotional_profiles")
-          .upsert({ user_id: userId });
+        await supabase.from("emotional_profiles").upsert({
+          user_id: userId,
+        });
       }
     }
 
-    // ─────────────────────────────
-    // MEMORY ENGINE
-    // ─────────────────────────────
     const baseProfile = {
       emotional_state: supabaseProfile.emotional_state ?? "neutral",
       intensity: supabaseProfile.intensity ?? 0,
       relationship_mode: supabaseProfile.relationship_mode ?? "solo",
       relationship_state: supabaseProfile.relationship_state ?? null,
-      communication_style:
-        supabaseProfile.communication_style ?? null,
-      intimacy_level:
-        supabaseProfile.intimacy_level ?? null,
-      emotional_needs:
-        supabaseProfile.emotional_needs ?? [],
+      communication_style: supabaseProfile.communication_style ?? null,
+      intimacy_level: supabaseProfile.intimacy_level ?? null,
+      emotional_needs: supabaseProfile.emotional_needs ?? [],
       tensions: supabaseProfile.tensions ?? [],
       narrative: supabaseProfile.narrative ?? null,
     };
 
-    const extracted = extractProfile(
-      lastMessage,
-      baseProfile
-    );
-
-    const mergedProfile = updateProfile(
-      baseProfile,
-      extracted
-    );
+    const extracted = extractProfile(lastMessage, baseProfile);
+    const mergedProfile = updateProfile(baseProfile, extracted);
 
     const memoryContext = buildContext(mergedProfile);
 
     // ─────────────────────────────
-    // THERAPY ENGINE
+    // THERAPY
     // ─────────────────────────────
     const therapy = matchTherapy(lastMessage).slice(0, 2);
 
@@ -164,20 +161,11 @@ ${therapy
   .map(
     (t) => `
 Situation: ${t.situation}
-
-Observation:
-${t.observation}
-
-Interpretation:
-${t.interpretationLogic}
-
-Guidance:
-${t.guidance}
-
+Observation: ${t.observation}
+Interpretation: ${t.interpretationLogic}
+Guidance: ${t.guidance}
 Questions:
-${t.explorationQuestions
-  ?.map((q: string) => `- ${q}`)
-  .join("\n")}
+${(t.explorationQuestions ?? []).map((q) => `- ${q}`).join("\n")}
 `
   )
   .join("\n")}
@@ -187,8 +175,7 @@ ${t.explorationQuestions
     // ─────────────────────────────
     // PRODUCTS
     // ─────────────────────────────
-    const relevantProducts =
-      searchProducts(lastMessage).slice(0, 3);
+    const relevantProducts = searchProducts(lastMessage).slice(0, 3);
 
     const productContext = relevantProducts.length
       ? `
@@ -210,19 +197,17 @@ Description: ${p.description}
     // ─────────────────────────────
     // BLOG
     // ─────────────────────────────
-    const relevantBlogPosts =
-      searchBlog(lastMessage).slice(0, 3);
+    const relevantBlogPosts = searchBlog(lastMessage).slice(0, 3);
 
     const blogContext = relevantBlogPosts.length
       ? `
-AVAILABLE BLOG CONTENT:
+BLOG CONTENT:
 
 ${relevantBlogPosts
   .map(
     (b) => `
 Title: ${b.title}
 Excerpt: ${b.excerpt}
-Tags: ${b.tags?.join(", ")}
 URL: ${b.url}
 `
   )
@@ -231,25 +216,20 @@ URL: ${b.url}
       : "";
 
     // ─────────────────────────────
-    // VIDEO ENGINE
+    // VIDEOS
     // ─────────────────────────────
-    const relevantVideos =
-      searchVideos(lastMessage).slice(0, 2);
+    const relevantVideos = searchVideos(lastMessage).slice(0, 2);
 
     const videoContext = relevantVideos.length
       ? `
-EDUCATIONAL VIDEO CONTENT:
+VIDEOS:
 
 ${relevantVideos
   .map(
-    (video) => `
-Title: ${video.title}
-
-Description:
-${video.description}
-
-URL:
-${video.url}
+    (v) => `
+Title: ${v.title}
+Description: ${v.description}
+URL: ${v.url}
 `
   )
   .join("\n")}
@@ -257,45 +237,12 @@ ${video.url}
       : "";
 
     // ─────────────────────────────
-    // BRAND
+    // SYSTEM PROMPT
     // ─────────────────────────────
-    const brand = YESFORLOV_KNOWLEDGE;
-
     const brandSystem = `
 YOU ARE NINA — YESFORLOV EMOTIONAL INTELLIGENCE SYSTEM.
-
-BRAND:
-Name: ${brand.brandIdentity.name}
-
-Essence:
-- ${brand.brandIdentity.essence.join("\n- ")}
-
-Vision:
-${brand.brandPurpose.vision}
-
-VALUES:
-- ${brand.brandValues.core.join("\n- ")}
-
-TONE:
-- ${brand.toneSystem.personality.join("\n- ")}
-
-FOUNDER:
-Christian Palix is the founder of YESforLOV.
-
-RULES:
-- Never explicit
-- Never clinical
-- Never vulgar
-- Never invent products
-- Always elegant, warm, emotionally intelligent
-- Suggest educational content only if relevant
-- Never overwhelm the user with too much information
-- Videos should feel like gentle guidance
 `.trim();
 
-    // ─────────────────────────────
-    // FINAL PROMPT
-    // ─────────────────────────────
     const finalPrompt = `
 ${SYSTEM_PROMPT}
 
@@ -315,46 +262,21 @@ Intention: ${emotionContext.intention}
 `.trim();
 
     // ─────────────────────────────
-    // OPENAI
+    // OPENAI CALL
     // ─────────────────────────────
-    const response =
-      await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        temperature: 0.8,
-        messages: [
-          {
-            role: "system",
-            content: brandSystem,
-          },
-          {
-            role: "system",
-            content: finalPrompt,
-          },
-          ...userMessages,
-        ],
-      });
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.8,
+      messages: [
+        { role: "system", content: brandSystem },
+        { role: "system", content: finalPrompt },
+        ...userMessages,
+      ],
+    });
 
     const assistantMessage =
       response.choices[0]?.message?.content ?? "";
 
-    // ─────────────────────────────
-    // MEMORY UPDATE
-    // ─────────────────────────────
-    if (userId && supabase) {
-      await supabase
-        .from("emotional_profiles")
-        .update({
-          emotional_state: emotion,
-          intensity: intensityMap[emotion] ?? 20,
-          last_interaction_at:
-            new Date().toISOString(),
-        })
-        .eq("user_id", userId);
-    }
-
-    // ─────────────────────────────
-    // RESPONSE
-    // ─────────────────────────────
     return Response.json({
       message: assistantMessage,
       emotion,
@@ -368,12 +290,8 @@ Intention: ${emotionContext.intention}
     console.error("❌ CHAT ERROR:", err);
 
     return Response.json(
-      {
-        error: "server_error",
-      },
-      {
-        status: 500,
-      }
+      { error: "server_error" },
+      { status: 500 }
     );
   }
 }
