@@ -14,7 +14,7 @@ import { BLOG_POSTS } from "@/lib/knowledge/yesforlov/blog";
 import { YESFORLOV_KNOWLEDGE } from "@/lib/knowledge/yesforlov";
 
 // 🧠 THERAPY
-import { therapyPattern } from "@/lib/knowledge/education/TherapyPattern";
+import { therapyPatterns } from "@/lib/knowledge/education/TherapyPattern";
 
 // 🎥 VIDEOS
 import { searchVideos } from "@/lib/knowledge/education/searchVideos";
@@ -72,7 +72,7 @@ function searchBlog(message: string) {
 function matchTherapy(message: string) {
   const lower = message.toLowerCase();
 
-  return therapyPatterns.filter((p) => {
+  return therapyPattern.filter((p) => {
     const text = `
       ${p.situation}
       ${p.observation}
