@@ -72,7 +72,7 @@ function searchBlog(message: string) {
 function matchTherapy(message: string) {
   const lower = message.toLowerCase();
 
-  return therapyPattern.filter((p) => {
+  return therapyPatterns.filter((p) => {
     const text = `
       ${p.situation}
       ${p.observation}
