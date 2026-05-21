@@ -1,4 +1,4 @@
-import { products } from "./yesforlov/products";
+import { products } from "./products";
 
 export function retrieveRelevantProducts(userMessage: string) {
   const query = userMessage.toLowerCase();
