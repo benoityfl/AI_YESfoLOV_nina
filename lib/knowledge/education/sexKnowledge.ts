@@ -21,7 +21,7 @@ export const sexKnowledge: KnowledgeEntry[] = [
     topic: "libido",
     keywords: ["libido", "pulsion", "sexuelle", "appétit sexuel", "baisse"],
     content:
-      "La libido n'est pas un interrupteur fixe. Elle est modulée par les hormones, les émotions, le contexte de vie, et même la météo. Des périodes de basse libido sont normales et ne signifient pas que quelque chose est "cassé".",
+      "La libido n'est pas un interrupteur fixe. Elle est modulée par les hormones, les émotions, le contexte de vie, et même la météo. Des périodes de basse libido sont normales et ne signifient pas que quelque chose est \"cassé\".",
     tone: "normalize",
   },
 
@@ -48,7 +48,7 @@ export const sexKnowledge: KnowledgeEntry[] = [
     topic: "communication",
     keywords: ["communiquer", "parler", "dire", "exprimer", "besoins", "difficile à dire", "ose pas"],
     content:
-      "Parler de ses désirs ou de ses limites est souvent plus difficile que l'acte lui-même. La vulnérabilité crée une intimité plus profonde que la performance. Commencer par de petites phrases ("j'aimerais…", "j'aime quand…") ouvre souvent des espaces insoupçonnés.",
+      "Parler de ses désirs ou de ses limites est souvent plus difficile que l'acte lui-même. La vulnérabilité crée une intimité plus profonde que la performance. Commencer par de petites phrases (\"j'aimerais…\", \"j'aime quand…\") ouvre souvent des espaces insoupçonnés.",
     tone: "empower",
   },
 
