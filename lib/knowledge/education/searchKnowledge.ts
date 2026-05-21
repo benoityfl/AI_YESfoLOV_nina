@@ -1,4 +1,5 @@
-export { sexKnowledge, type KnowledgeEntry } from "./sexKnowledge";
+import { sexKnowledge, type KnowledgeEntry } from "./sexKnowledge";
+export { sexKnowledge, type KnowledgeEntry };
 
 /**
  * Cherche les entrées de connaissance bien-être
