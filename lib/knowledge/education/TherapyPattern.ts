@@ -1,5 +1,5 @@
 // ============================================================
-// therapyKnowledge.ts
+// therapypattern.ts
 // Base de connaissance thérapeutique pour IA sexologique
 // Domaines : bien-être intime, épanouissement amoureux,
 //            self-love, relations de couple
