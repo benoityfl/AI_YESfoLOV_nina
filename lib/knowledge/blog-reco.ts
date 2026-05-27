@@ -1,4 +1,4 @@
-import { BLOG_POSTS } from "./blog";
+import { BLOG_POSTS } from "./yesforlov/blog";
 
 export function recommendBlog(message: string) {
   const m = message.toLowerCase();
