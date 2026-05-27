@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import VideoCard from "../components/VideoCard";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<any[]>([]);
@@ -66,12 +67,14 @@ export default function ChatPage() {
       setMessages([...newMessages, {
         role: "assistant",
         content: data?.message || "Je n'ai pas pu générer de réponse.",
+        videos: data?.videos ?? [],
       }]);
     } catch (err) {
       console.error(err);
       setMessages([...newMessages, {
         role: "assistant",
         content: "Une erreur est survenue. Veuillez réessayer.",
+        videos: [],
       }]);
     } finally {
       setLoading(false);
@@ -107,7 +110,6 @@ export default function ChatPage() {
           overflow: hidden;
         }
 
-        /* Ambient glow */
         .chat-root::before {
           content: '';
           position: fixed;
@@ -119,7 +121,6 @@ export default function ChatPage() {
           z-index: 0;
         }
 
-        /* Grain */
         .chat-root::after {
           content: '';
           position: fixed;
@@ -130,7 +131,6 @@ export default function ChatPage() {
           z-index: 0;
         }
 
-        /* ── HEADER ── */
         .header {
           position: relative;
           z-index: 10;
@@ -231,7 +231,6 @@ export default function ChatPage() {
           color: rgba(200,169,110,0.7);
         }
 
-        /* ── MESSAGES ── */
         .messages-area {
           flex: 1;
           overflow-y: auto;
@@ -250,7 +249,6 @@ export default function ChatPage() {
           border-radius: 2px;
         }
 
-        /* Welcome */
         .welcome {
           flex: 1;
           display: flex;
@@ -316,7 +314,6 @@ export default function ChatPage() {
           font-weight: 200;
         }
 
-        /* Message rows */
         .msg-row {
           display: flex;
           flex-direction: column;
@@ -336,7 +333,6 @@ export default function ChatPage() {
         .msg-label.nina { color: rgba(200,169,110,0.45); padding-left: 2px; }
         .msg-label.vous { color: rgba(239,232,220,0.2); }
 
-        /* User bubble */
         .bubble-user {
           max-width: 72%;
           background: linear-gradient(135deg, #EFE8DC 0%, #D8CFBF 100%);
@@ -351,7 +347,6 @@ export default function ChatPage() {
           box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        /* Nina bubble */
         .bubble-nina {
           max-width: 80%;
           position: relative;
@@ -378,7 +373,12 @@ export default function ChatPage() {
           border-radius: 2px;
         }
 
-        /* ── TYPING ── */
+        .video-separator {
+          border: none;
+          border-top: 1px solid rgba(200,169,110,0.15);
+          margin: 12px 0;
+        }
+
         .typing-row {
           display: flex;
           align-items: flex-start;
@@ -423,7 +423,6 @@ export default function ChatPage() {
           font-family: 'Jost', sans-serif;
         }
 
-        /* ── INPUT BAR ── */
         .input-bar {
           position: relative;
           z-index: 10;
@@ -575,7 +574,23 @@ export default function ChatPage() {
               {m.role === "user" ? (
                 <div className="bubble-user">{m.content}</div>
               ) : (
-                <div className="bubble-nina">{m.content}</div>
+                <div className="bubble-nina">
+                  {m.content}
+                  {m.videos?.length > 0 && (
+                    <>
+                      <hr className="video-separator" />
+                      {m.videos.map((v: any) => (
+                        <VideoCard
+                          key={v.url}
+                          url={v.url}
+                          title={v.title}
+                          tag={v.tag ?? "Santé intime"}
+                          duration={v.duration}
+                        />
+                      ))}
+                    </>
+                  )}
+                </div>
               )}
             </div>
           ))}
