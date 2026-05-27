@@ -1,6 +1,6 @@
 import { routeQuery } from "./router";
 import { searchKnowledge } from "../rag/searchKnowledge";
-import { sexKnowledge } from "./sexKnowledge";
+import { sexKnowledge } from "./education/sexKnowledge";
 
 export async function getAnswer(message: string) {
   const route = routeQuery(message);
